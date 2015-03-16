@@ -1,0 +1,229 @@
+/*
+ * Mohammad Juma
+ * 
+ * TCSS 305 - Autumn 2012
+ * Assignment 3 - SnapShop
+ * October 13, 2012
+ */
+
+package snapshop.gui;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
+
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+
+import snapshop.filters.EdgeDetectFilter;
+import snapshop.filters.EdgeHighlightFilter;
+import snapshop.filters.Filter;
+import snapshop.filters.FlipHorizontalFilter;
+import snapshop.filters.FlipVerticalFilter;
+import snapshop.filters.GrayscaleFilter;
+import snapshop.filters.NegativeFilter;
+import snapshop.filters.SharpenFilter;
+import snapshop.filters.SoftenFilter;
+import snapshop.image.PixelImage;
+
+/**
+ * Creates the frame for the SnapShop program.
+ * 
+ * @author Mohammad Juma
+ * @version 10-13-12
+ */
+public class SnapShopFrame extends JFrame
+{
+  /** 
+   * The Serialization ID.
+   */
+  private static final long serialVersionUID = 0;  
+  
+  /**
+   * The directory this program is run from.
+   */
+  private static final File CURRENT_DIRECTORY = new File(".");
+  
+  /**
+   * File chooser for opening and saving files.
+   */
+  private final JFileChooser my_chooser = new JFileChooser();
+
+  /**
+   * Open File Button.
+   */
+  private final JButton my_open_button = new JButton("Open...");
+  
+  /**
+   * Save File Button.
+   */
+  private final JButton my_save_button = new JButton("Save As...");
+  
+  /**
+   * JLabel for holding the image.
+   */
+  private final JLabel my_label = new JLabel("", SwingConstants.CENTER);
+  
+  /**
+   * Panel to hold the filter buttons.
+   */
+  private final JPanel my_filters_panel = new JPanel();
+  
+  /**
+   * Array of filters for photo manipulation.
+   */
+  private final Filter[] my_filters = new Filter[] {new EdgeDetectFilter(), 
+    new EdgeHighlightFilter(), new FlipHorizontalFilter(), new FlipVerticalFilter(), 
+    new GrayscaleFilter(), new SharpenFilter(), new SoftenFilter(), new NegativeFilter()};
+  
+  /**
+   * PixelImage object creates ImageIcons.
+   */
+  private PixelImage my_image;
+
+  /**
+   * SnapShopFrame constructor, creates the initial frame for the program.
+   */
+  public SnapShopFrame()
+  {
+    super("TCSS 305 SnapShop");
+    my_chooser.setCurrentDirectory(CURRENT_DIRECTORY);
+    filtersPanel();
+    add(my_filters_panel, BorderLayout.NORTH);
+    add(my_label, BorderLayout.CENTER);
+    add(fileOptionsPanel(), BorderLayout.SOUTH);
+    pack();
+  }
+  
+  /**
+   * Starts the GUI.
+   */
+  public void start()
+  {    
+    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    setVisible(true);
+  }
+  
+  /**
+   * Creates the filter buttons panel.
+   */
+  private void filtersPanel()
+  {
+    my_filters_panel.setLayout(new FlowLayout());
+
+    for (int i = 0; i < my_filters.length; i++)
+    {
+      my_filters_panel.add(createButton(my_filters[i]));
+    }
+  }
+  
+  /**
+   * Creates the open and save buttons panel.
+   * 
+   * @return panel
+   */
+  private JPanel fileOptionsPanel()
+  {
+    final JPanel panel = new JPanel();
+    panel.setLayout(new FlowLayout());
+    
+    my_open_button.addActionListener(new ActionListener()
+    {
+      public void actionPerformed(final ActionEvent the_event)
+      {
+        openFile();
+      }
+    });
+    panel.add(my_open_button);
+    
+    my_save_button.addActionListener(new ActionListener()
+    {
+      public void actionPerformed(final ActionEvent the_event)
+      {
+        saveFile();
+      }
+    });
+    my_save_button.setEnabled(false);
+    panel.add(my_save_button);
+    
+    return panel;
+  }
+  
+  /**
+   * Creates a filter button.
+   * 
+   * @param the_filter Type of button to create.
+   * @return Created button.
+   */
+  private JButton createButton(final Filter the_filter)
+  {
+    final JButton button = new JButton(the_filter.getName());
+    button.setEnabled(false);
+    button.addActionListener(new ActionListener()
+    {
+      public void actionPerformed(final ActionEvent the_event)
+      {
+        the_filter.filter(my_image);
+        my_label.setIcon(new ImageIcon(my_image));
+      }
+    });
+
+    return button;
+  }
+  
+  /**
+   * Opens a given file and checks to make sure its valid.
+   */
+  private void openFile()
+  {
+    final int return_state = my_chooser.showOpenDialog(super.getContentPane());
+    if (return_state == JFileChooser.APPROVE_OPTION)
+    {
+      my_chooser.setCurrentDirectory(my_chooser.getCurrentDirectory());
+      try
+      {
+        my_image = PixelImage.load(my_chooser.getSelectedFile());
+        my_label.setIcon(new ImageIcon(my_image));
+        for (int i = 0; i < my_filters_panel.getComponentCount(); i++)
+        {
+          my_filters_panel.getComponent(i).setEnabled(true);
+        }
+        my_save_button.setEnabled(true);
+        pack();
+      }
+      catch (final IOException e)
+      {
+        JOptionPane.showMessageDialog(null, e.getMessage());
+      }
+    }
+  }
+  
+  /**
+   * Save the PixelImage to a file.
+   */
+  private void saveFile()
+  {
+    final int return_state = my_chooser.showSaveDialog(super.getContentPane());
+    if (return_state == JFileChooser.APPROVE_OPTION)
+    {
+      my_chooser.setCurrentDirectory(my_chooser.getCurrentDirectory());
+      try
+      {
+        my_image.save(my_chooser.getSelectedFile());
+      }
+      catch (final IOException e)
+      {
+        JOptionPane.showMessageDialog(null, e.getMessage());
+      }
+    }
+  }
+}
